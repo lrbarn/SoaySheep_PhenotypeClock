@@ -1,4 +1,4 @@
-#### 4.a Sheet Data - Female ####
+#### 2.a Morphological Clock - Female ####
 
 #### Set Up ####
 library(tidyverse)
@@ -8,35 +8,29 @@ library(glmnet)
 BirthPheno_recode <- read_csv("OutputData/TransformedData/BirthPheno_recode.csv")
 female_sheet <- read_csv("OutputData/TransformedData/female_sheet_z_NEW.csv")
 
-#### Dropping NAs For Now ####
 femaleData <- left_join(female_sheet, BirthPheno_recode, by = "ID")
 
 femaleData <- femaleData %>% 
 mutate(AgeY = CapYear - BirthYear)
 
 
-
+# selecting traits
 female_clockData_UNCLEAN <- femaleData %>% 
   select(AgeY, ID, UnshedWool_recode, Scouring_recode, TeethDeform_recode, Milk_recode, Weight.z, ForeLeg.z, Teeth.z, Keds.z) 
 
-
+# ensuring there are no gaps
 female_clockData <- na.omit(female_clockData_UNCLEAN)
 
 rm(female_clockData_UNCLEAN)
 
-
+## double checking no duplicated sheep per age 
 duplicates <- female_clockData %>%
-  # Group by the unique combination
   group_by(ID, AgeY) %>%
-  # Filter for groups that appear more than once
   filter(n() > 1) %>%
-  # Keep only the relevant columns
   select(ID, AgeY) %>%
-  # Optional: Keep only unique rows of these duplicates 
-  # (remove if you want to see every raw instance)
   distinct()
 
-## should be no individuals with >1 record per ageY
+## should be no individuals with >1 record per AgeY
 
 #### LOAOCV and Elastic Net Set Up ####
 
@@ -88,7 +82,7 @@ for (i in 1:n) {
   
   coef.lambda.min <- coef(TRAIN_glmnet)[, TRAIN_glmnet$lambda == lambda.min[i]]
   
-  #6 Predicting the age(s) for the left out individual
+  #6 Predicting the age(s) for the left out individual/ test set
   AgePrediction <- predict(TRAIN_glmnet, newx = (as.matrix(test %>% dplyr::select(-AgeY))), type = "response", s = lambda.min[i])
   
   #7 Collating the non zero coefficients
@@ -108,11 +102,14 @@ for (i in 1:n) {
   print(paste0(i, " of ", n, " at ", now()))
 }
 
-# collating output
+
+#### Output Collation ####
+# collating output of loop
 LOAOCV_output <- data.frame(runNumber = run,
                             lambda.min = lambda.min,
                             nonZero = nonZero,
                             testID = ID_list)
+# collating age predictions
 LOAOCV_predictions <- data.frame(testID = testID,
                                  testAgeY = testAge,
                                  testAgeYPRED = testAgePRED,
@@ -125,19 +122,20 @@ LOAOCV_predictions <- data.frame(testID = testID,
 variable_freq <- as.data.frame(sort(table(unlist(nonZero_names_list)), decreasing = TRUE))
 colnames(variable_freq) <- c("Variable", "Freq")
 
+## Model accuracy measures
 MeanSE <- mean(LOAOCV_predictions$sq_error)
 MedianAbsoluteError <- median(LOAOCV_predictions$ab_error)
 LOAOCV_correlation <- cor.test(LOAOCV_predictions$testAgeY, LOAOCV_predictions$testAgeYPRED)
 
 
 
-
+#### Plots ####
 ggplot(LOAOCV_predictions, aes(x = testAgeY, y = testAgeYPRED)) +
   geom_point() + 
   geom_smooth(method = "lm") +
   labs(x = "Age (years)",
        y = "Predicted Age (years)",
-       title = "Sheet Clock Females") +
+       title = "Morphological Clock Females") +
   xlim(-1, 15) +
   ylim(-1, 15) +
   geom_abline(intercept = 0, slope = 1, colour = "pink", linetype = 2) +
@@ -171,7 +169,7 @@ full_lambda.min <- glmnet_cv$lambda.min
 #running again for the lambda min
 full_glmnet <- glmnet(predictors, response, alpha = 0.5, nlambda = 100, standardize = FALSE)
 
-# collecting up the non-zero CpGs and their coefficients
+# collecting up the non-zero traits and their coefficients
 fullModelCoef <- coef(full_glmnet, s = full_lambda.min) %>%
   as.matrix() %>% 
   as.data.frame() %>%
@@ -183,6 +181,8 @@ fullModelCoef <- fullModelCoef  %>%
   filter(Coefficient != 0) %>% 
   mutate(direction = if_else(Coefficient > 0, "positive", "negative"))
 
+
+#### Plotting ####
 ggplot(fullModelCoef %>% 
          filter(Variable != "(Intercept)"),
        aes(x = Variable, y = Coefficient, fill = direction)) +
