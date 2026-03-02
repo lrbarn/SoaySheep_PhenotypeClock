@@ -1,4 +1,4 @@
-#### 37. Modelling and plotting each trait by age ####
+#### 1. Modelling and plotting each trait by age ####
 
 #### Packages ####
 library(tidyverse)
