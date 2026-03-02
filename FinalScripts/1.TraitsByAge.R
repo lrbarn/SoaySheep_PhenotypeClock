@@ -24,7 +24,7 @@ female_behaviour <- female_behaviour %>%
   select(-id, -year)
 
 
-##### Combining and dropping incomplete #####
+##### Combining datasets #####
 female_data <- full_join(female_sheet, female_behaviour)
 female_data <- full_join(female_data, female_sample_z)
 
@@ -33,7 +33,7 @@ female_clockData <- left_join(female_data, BirthPheno_recode, by = "ID")
 female_clockData <- female_clockData %>% 
   mutate(AgeY = CapYear - BirthYear) %>% 
   select(ID, AgeY, CapYear,
-         # sheet data
+         # morphology data
          UnshedWool_recode, Scouring_recode, TeethDeform_recode, Milk_recode, 
          Weight.z, ForeLeg.z, Teeth.z, Keds.z,
          # behaviour data
@@ -42,7 +42,7 @@ female_clockData <- female_clockData %>%
          
          os.deg.z, os.stre.z, os.mean.stre.z, os.soc.sel.z,
          
-         # sample data
+         # bioassay data
          IgA.z, IgE.z, IgG.z,
          RTL.z,
          Strongyles.z, Coccidea.z)
@@ -59,7 +59,7 @@ male_behaviour <- male_behaviour %>%
          CapYear = year) %>% 
   select(-id, -year)
 
-#### Combining and dropping incomplete ####
+#### Combining datasets ####
 male_data <- full_join(male_sheet, male_behaviour)
 male_data <- full_join(male_data, male_sample_z)
 
@@ -68,9 +68,10 @@ male_clockData <- left_join(male_data, BirthPheno_recode, by = "ID")
 male_clockData <- male_clockData %>% 
   mutate(AgeY = CapYear - BirthYear) %>% 
   select(ID, AgeY, CapYear,
-         # sheet data
+         # morphological data
          UnshedWool_recode, Scouring_recode, TeethDeform_recode, BrokenHorns_recode, 
          Weight.z, ForeLeg.z, Teeth.z, Keds.z, HornLen.z, HornCirc.z, BolCirc.z, BolLen.z,
+         
          # behaviour data
          home.range.size.z,
          mm.deg.z, mm.stre.z, mm.eigen.z, mm.clust.z, mm.betw.z, mm.close.z, mm.part.coef.z, mm.mean.stre.z, mm.mean.gs.z, mm.soc.sel.z, 
@@ -92,24 +93,22 @@ female_clockData <- female_clockData %>%
   mutate(ALM = last(AgeY)) %>% 
   ungroup()
 
-female_clockData <- female_clockData %>% 
-  mutate(AgeY2 = AgeY^2,
-         Sex = "Female")
-
 male_clockData <- male_clockData %>% 
   group_by(ID) %>% 
   mutate(ALM = last(AgeY)) %>% 
   ungroup()
 
+#### Adding sex and age squared
+female_clockData <- female_clockData %>% 
+  mutate(AgeY2 = AgeY^2,
+         Sex = "Female")
+
 male_clockData <- male_clockData %>% 
   mutate(AgeY2 = AgeY^2,
          Sex = "Male")
 
-
-
 ## combined data
 all_data <- full_join(female_clockData, male_clockData)
-
 
 
 #### Models and Plots ####
@@ -122,7 +121,7 @@ mod_unshed_m <- glmer(UnshedWool_recode ~ AgeY + AgeY2 + ALM +
                         (1|CapYear) + (1|ID), data = male_clockData,
                       family = binomial(link = "logit"))
 
-## still failing to converge
+## dropping age^2
 mod_unshed_m_ALT  <- glmer(UnshedWool_recode ~ AgeY + ALM +
                              (1|CapYear), data = male_clockData,
                            family = binomial(link = "logit"))
@@ -136,7 +135,9 @@ ggplot(data = all_data, aes(x = AgeY, y = UnshedWool_recode, fill = Sex, colour 
               se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 
@@ -162,12 +163,13 @@ PLOT_scouring <-
               se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 ##### Milk #####
 
-## fails to converge
 mod_milk <- glmer(Milk_recode ~ AgeY + AgeY2 + ALM +
                     (1|CapYear) + (1|ID), data = female_clockData, 
                   family = binomial(link = "logit"))
@@ -180,7 +182,9 @@ PLOT_milk <-
               se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 ##### Deformities #####
 mod_deform_f <- glmer(TeethDeform_recode ~ AgeY + AgeY2 + ALM +
@@ -199,7 +203,9 @@ PLOT_deform <-
               se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 
@@ -207,6 +213,7 @@ PLOT_deform <-
 mod_broken_m <- glmer(BrokenHorns_recode ~ AgeY + AgeY2 + ALM +
                         (1|CapYear) + (1|ID), data = male_clockData, 
                       family = binomial(link = "logit"))
+
 ## dropping the squared age
 mod_broken_m_ALT <- glmer(BrokenHorns_recode ~ AgeY + ALM +
                             (1|CapYear) + (1|ID), data = male_clockData, 
@@ -221,7 +228,9 @@ PLOT_broken <-
               se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 ##### Weight #####
@@ -237,7 +246,9 @@ PLOT_weight <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 
@@ -254,7 +265,9 @@ PLOT_foreLeg <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 ##### Ked Count ####
@@ -273,7 +286,9 @@ PLOT_keds <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 ##### Incisor Count #####
@@ -292,7 +307,9 @@ PLOT_teeth <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 
@@ -306,7 +323,9 @@ PLOT_hornLen <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 ##### Horn Circ #####
@@ -319,7 +338,9 @@ PLOT_hornCirc <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) + 
+  theme_bw()
 
 
 ##### Bolcirc ####
@@ -332,7 +353,9 @@ PLOT_bolCirc <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 ##### BolLen ####
@@ -345,7 +368,9 @@ PLOT_bolLen <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 ##### Strongyles #####
@@ -361,11 +386,12 @@ PLOT_strongyles <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
-
-##### Coccidia #####
+##### Coccidea #####
 mod_coccidea_f <- lmer(Coccidea.z ~ AgeY + AgeY2 + ALM +
                        (1|CapYear) + (1|ID), data = female_clockData)
 
@@ -379,7 +405,9 @@ PLOT_coccidea <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 ##### IgA #####
 mod_iga_f <- lmer(IgA.z ~ AgeY + AgeY2 + ALM +
@@ -394,7 +422,9 @@ PLOT_iga <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 ##### IgE #####
 mod_ige_f <- lmer(IgE.z ~ AgeY + AgeY2 + ALM +
@@ -409,7 +439,9 @@ PLOT_ige <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) + 
+  theme_bw()
 
 ##### IgG #####
 mod_igg_f <- lmer(IgE.z ~ AgeY + AgeY2 + ALM +
@@ -424,7 +456,9 @@ PLOT_igg <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 ##### RTL #####
 mod_rtl_f <- lmer(RTL.z ~ AgeY + AgeY2 + ALM +
@@ -442,7 +476,9 @@ PLOT_RTL <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 ##### Home Range #####
@@ -466,7 +502,9 @@ PLOT_home <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) + 
+  theme_bw()
 
 
 ##### Degree -ss ####
@@ -489,7 +527,9 @@ PLOT_degree.ss <-
   ylab("ss.degree.z") +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 ##### Degree - os ####
@@ -509,7 +549,9 @@ PLOT_degree.os <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 ##### Strength - ss ####
 mod_stren.ff <- lmer(ff.stre.z ~ AgeY + AgeY2 + ALM +
@@ -527,7 +569,9 @@ PLOT_stren.ss <-
   ylab("ss.stre.z") +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 
@@ -548,7 +592,9 @@ PLOT_stre.os <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) + 
+  theme_bw()
 
 
 ##### Participation - ss #####
@@ -574,7 +620,9 @@ PLOT_partcoef.ss <-
   ylab("ss.part.coef.z") +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 ##### Mean Strength - ss #####
 mod_meanStre.ff <- lmer(ff.mean.stre.z ~ AgeY + AgeY2 + ALM +
@@ -592,7 +640,9 @@ PLOT_meanStre.ss <-
   ylab("ss.part.coef.z") +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 
@@ -613,7 +663,9 @@ PLOT_mean.stre.os <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 ##### social selectivity - ss #####
 mod_socsel.ff <- lmer(ff.soc.sel.z ~ AgeY + AgeY2 + ALM +
@@ -631,7 +683,9 @@ PLOT_socsel.ss <-
   ylab("ss.soc.sel.z") +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) + 
+  theme_bw()
 
 
 ##### social selectivity - os #####
@@ -650,7 +704,9 @@ PLOT_soc.sel.os <-
   geom_smooth(method = "lm", se = TRUE) +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 ##### eigen ####
@@ -669,7 +725,9 @@ PLOT_eigen.ss <-
   ylab("ss.eigen.z") +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 
@@ -692,7 +750,9 @@ PLOT_betw.ss <-
   ylab("ss.betw.z") +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 ##### Closeness #####
@@ -715,7 +775,9 @@ PLOT_close.ss <-
   ylab("ss.close.z") +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 ##### Clustering #####
@@ -737,17 +799,18 @@ PLOT_clust.ss <-
   ylab("ss.clust.z") +
   scale_colour_manual(values = c("Female" = "lightblue", 
                                  "Male" = "lightblue4")) +
-  scale_fill_manual(values = c("Female" = "lightblue",                                 "Male" = "lightblue4")) +     theme_bw()
+  scale_fill_manual(values = c("Female" = "lightblue",
+                               "Male" = "lightblue4")) +
+  theme_bw()
 
 
 #### Panels of Plots ####
 plot_names <- ls(pattern = "^PLOT_")
 
-# 2. Get the actual objects into a list
+# Get the actual objects into a list
 plot_list <- mget(plot_names)
 
 # 3. Combine them into one big panel
-# 'ncol' or 'nrow' can be used to control the grid shape
 combined_panel <- patchwork::wrap_plots(plot_list) +
   patchwork::plot_layout(axis_titles = "collect", guides = "collect") 
 ggsave("AgeByTrait.png", combined_panel, height=7.5, width=12)
