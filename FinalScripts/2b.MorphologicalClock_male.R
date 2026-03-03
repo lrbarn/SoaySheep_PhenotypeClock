@@ -39,7 +39,7 @@ n <- length(ID_list)
 nonZeroVariable_names <- NA
 variable_names <- c("UnshedWool_recode", "Scouring_recode", "TeethDeform_recode", "Weight.z", "ForeLeg.z", "Teeth.z", "Keds.z", "HornLen.z", "HornCirc.z", "BolCirc.z", "BolLen.z", "BrokenHorns_recode")
 
-set.seed(123)
+set.seed(999)
 
 i <- NA
 
