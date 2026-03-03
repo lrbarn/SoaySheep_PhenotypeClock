@@ -50,7 +50,7 @@ variable_names <- c("home.range.size.z",
                     "os.deg.z", "os.stre.z", "os.mean.stre.z", "os.soc.sel.z"
 )
 
-set.seed(123)
+set.seed(999)
 
 i <- NA
 
