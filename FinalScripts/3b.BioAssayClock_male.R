@@ -34,7 +34,7 @@ variable_names <- c("IgA.z", "IgE.z", "IgG.z",
                     "RTL.z",
                     "Strongyles.z", "Coccidea.z")
 
-set.seed(123)
+set.seed(999)
 
 i <- NA
 
