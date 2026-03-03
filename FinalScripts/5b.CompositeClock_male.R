@@ -70,7 +70,7 @@ variable_names <- c(
   "Strongyles.z", "Coccidea.z"
 )
 
-set.seed(123)
+set.seed(999)
 
 i <- NA
 
