@@ -5,36 +5,19 @@ library(tidyverse)
 library(glmnet)
 
 #### Data ####
-BirthPheno_recode <- read_csv("OutputData/TransformedData/BirthPheno_recode.csv")
-female_sheet <- read_csv("OutputData/TransformedData/female_sheet_z_NEW.csv")
-
-femaleData <- left_join(female_sheet, BirthPheno_recode, by = "ID")
-
-femaleData <- femaleData %>% 
-mutate(AgeY = CapYear - BirthYear)
-
+female_clockData <- read_csv("Writing/Data/ClockData_f.csv")
 
 # selecting traits
-female_clockData_UNCLEAN <- femaleData %>% 
-  select(AgeY, ID, UnshedWool_recode, Scouring_recode, TeethDeform_recode, Milk_recode, Weight.z, ForeLeg.z, Teeth.z, Keds.z) 
+female_clockData <- female_clockData %>% 
+  select(AgeY, ID_recode, UnshedWool_recode, Scouring_recode, TeethDeform_recode, Milk_recode, Weight.z, ForeLeg.z, Teeth.z, Keds.z) 
 
 # ensuring there are no gaps
-female_clockData <- na.omit(female_clockData_UNCLEAN)
+female_clockData <- na.omit(female_clockData)
 
-rm(female_clockData_UNCLEAN)
-
-## double checking no duplicated sheep per age 
-duplicates <- female_clockData %>%
-  group_by(ID, AgeY) %>%
-  filter(n() > 1) %>%
-  select(ID, AgeY) %>%
-  distinct()
-
-## should be no individuals with >1 record per AgeY
 
 #### LOAOCV and Elastic Net Set Up ####
 
-ID_list <- as.vector(unique(female_clockData$ID))
+ID_list <- as.vector(unique(female_clockData$ID_recode))
 n <- length(ID_list)
 
 nonZeroVariable_names <- NA
@@ -64,8 +47,8 @@ nonZero_names_list <- list(NA)
 #### The LOOACV Loop ####
 for (i in 1:n) {
   #1 Setting up the training and test data (one id in test)
-  training <- female_clockData %>% filter(ID != ID_list[i]) %>% dplyr::select(-ID)
-  test <- female_clockData %>% filter(ID == ID_list[i]) %>% dplyr::select(-ID)
+  training <- female_clockData %>% filter(ID_recode != ID_list[i]) %>% dplyr::select(-ID_recode)
+  test <- female_clockData %>% filter(ID_recode == ID_list[i]) %>% dplyr::select(-ID_recode)
   
   #2 Setting up response and predictors
   predictors <- as.matrix(training %>% dplyr::select(-AgeY))
@@ -157,7 +140,7 @@ ggplot(LOAOCV_output, aes(x = nonZero)) +
 
 ##### Final Model ####
 #setting up predictors and response
-predictors <- as.matrix(female_clockData %>% dplyr::select(-AgeY, -ID))
+predictors <- as.matrix(female_clockData %>% dplyr::select(-AgeY, -ID_recode))
 response <- as.matrix(female_clockData %>% dplyr::select(AgeY))
 
 # fitting the model
@@ -194,9 +177,4 @@ ggplot(fullModelCoef %>%
 #### Plotting the coefficient selection ####
 plot(full_glmnet, label = TRUE)
 abline(v = -log(glmnet_cv$lambda.min), col = "red", lty = 2)
-abline(v = -log(glmnet_cv$lambda.1se), col = "blue", lty = 2)
-
-#### Writing Outputs ####
-#write_csv(fullModelCoef, "OutputData/FinalModelData/SheetClock/f_fullModelCoef.csv")
-
-#write_csv(LOAOCV_predictions, "OutputData/FinalModelData/SheetClock/f_predictions.csv")
+x
