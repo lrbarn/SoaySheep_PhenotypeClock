@@ -1,0 +1,8 @@
+@software{SoaySheep_PhenotypeClock_Code,
+  author = {Barnard, Lucy and Siracusa, Erin},
+  month = {3},
+  title = {{Soay Sheep Phenotype Clock Code}},
+  url = {https://github.com/lrbarn/SoaySheep_PhenotypeClock},
+  version = {1.0},
+  year = {2026}
+}
